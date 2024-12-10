@@ -37,7 +37,7 @@ def register_new_bot():
             break
         print("❌ 봇의 이름은 영어 알파벳만 포함해야 합니다.")
     bot_list = load_bot_list()
-    bot_list[bot_name] = {"token": TOKEN, "url": url}
+    bot_list[bot_name.lower()] = {"token": TOKEN, "url": url}
     save_bot_list(bot_list)
     print(f"✅ {bot_name} 봇이 등록되었습니다!")
 
@@ -80,7 +80,7 @@ async def send_screenshot(message: types.Message, bot, driver, screenshot_path):
 async def start_bot(bot_name, token, url, run_time):
     hours, minutes = map(int, run_time.split(':'))
     end_time = datetime.now() + timedelta(hours=hours, minutes=minutes)
-    RUNNING_BOTS[bot_name] = {"end_time": end_time}
+    RUNNING_BOTS[bot_name.lower()] = {"end_time": end_time}
 
     screenshot_path = f"{bot_name}_screenshot.png"
     driver = setup_driver(url)
@@ -128,7 +128,7 @@ async def main():
             print("프로그램을 종료합니다.")
             break
 
-        if bot_choice in bot_list:
+        if any(bot_choice.lower() == name.lower() for name in bot_list.keys()):
             if bot_choice in RUNNING_BOTS:
                 await stop_bot(bot_choice)
             else:
