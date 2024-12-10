@@ -2,6 +2,7 @@ import time
 import asyncio
 import os
 import json
+import subprocess
 from datetime import datetime, timedelta
 from selenium.webdriver.chrome.options import Options
 from selenium import webdriver
@@ -20,7 +21,7 @@ def load_bot_list():
     if os.path.exists(BOT_LIST_FILE):
         with open(BOT_LIST_FILE, "r") as file:
             bot_list = json.load(file)
-            print(f"🔍 로드된 봇 목록: {bot_list}")  # 디버깅 메시지
+            print(f"🔍 로드된 봇 목록: {bot_list}")
             return bot_list
     print("📂 bot_list.json 파일이 없습니다.")
     return {}
@@ -29,7 +30,7 @@ def load_bot_list():
 def save_bot_list(bot_list):
     with open(BOT_LIST_FILE, "w") as file:
         json.dump(bot_list, file, indent=4)
-    print(f"💾 저장된 봇 목록: {bot_list}")  # 디버깅 메시지
+    print(f"💾 저장된 봇 목록: {bot_list}")
 
 # 봇 등록 함수
 def register_new_bot():
@@ -68,7 +69,7 @@ def capture_screenshot(driver, screenshot_path):
 def click_button(driver):
     try:
         time.sleep(10)  # 페이지 로딩 대기
-        element = driver.find_element(By.TAG_NAME, "body")  # 버튼 요소 찾기
+        element = driver.find_element(By.TAG_NAME, "body")
         action = ActionChains(driver)
         action.move_to_element_with_offset(element, 0, -65).click().perform()
         print("✅ 버튼 클릭 성공!")
@@ -80,6 +81,15 @@ async def send_screenshot(message: types.Message, bot, driver, screenshot_path):
     capture_screenshot(driver, screenshot_path)
     await bot.send_message(message.chat.id, "📸 스크린샷 생성 중...")
     await bot.send_document(message.chat.id, open(screenshot_path, 'rb'))
+
+async def bot_status_updater():
+    while True:
+        for bot_name, data in RUNNING_BOTS.items():
+            end_time = data['end_time']
+            remaining_time = end_time - datetime.now()
+            remaining_str = f"{remaining_time.seconds // 3600:02}:{(remaining_time.seconds // 60) % 60:02}"
+            print(f"✅ {bot_name} 봇 실행 중 (남은 시간: {remaining_str})")
+        await asyncio.sleep(30)
 
 async def start_bot(bot_name, token, url, run_time):
     hours, minutes = map(int, run_time.split(':'))
@@ -97,7 +107,8 @@ async def start_bot(bot_name, token, url, run_time):
         await send_screenshot(message, bot, driver, screenshot_path)
 
     click_button(driver)
-    print(f"✅ {bot_name} 봇 실행 중 (종료 시간: {end_time.strftime('%Y-%m-%d %H:%M')})")
+    print(f"✅ {bot_name} 봇 실행 중 (종료 시각: {end_time.strftime('%Y-%m-%d %H:%M')})")
+    asyncio.create_task(bot_status_updater())
     await dp.start_polling()
 
 async def stop_bot(bot_name):
@@ -105,6 +116,7 @@ async def stop_bot(bot_name):
     RUNNING_BOTS.pop(bot_name, None)
 
 async def main():
+    subprocess.Popen(["nohup", "python3", "main.py"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     while True:
         bot_list = load_bot_list()
 
