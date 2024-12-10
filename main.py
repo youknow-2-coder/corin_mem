@@ -36,12 +36,12 @@ def register_new_bot():
     TOKEN = input("Telegram Bot Token을 입력하세요: ").strip()
     url = input("크롬 구성요소 URL을 입력하세요: ").strip()
     while True:
-        bot_name = input("봇의 이름을 영어로 입력하세요: ").strip()
+        bot_name = input("봇의 이름을 영어로 입력하세요: ").strip().lower()
         if bot_name.isalpha():
             break
         print("❌ 봇의 이름은 영어 알파벳만 포함해야 합니다.")
     bot_list = load_bot_list()
-    bot_list[bot_name.lower()] = {"token": TOKEN, "url": url}
+    bot_list[bot_name] = {"token": TOKEN, "url": url}
     save_bot_list(bot_list)
     print(f"✅ {bot_name} 봇이 등록되었습니다!")
 
@@ -84,7 +84,7 @@ async def send_screenshot(message: types.Message, bot, driver, screenshot_path):
 async def start_bot(bot_name, token, url, run_time):
     hours, minutes = map(int, run_time.split(':'))
     end_time = datetime.now() + timedelta(hours=hours, minutes=minutes)
-    RUNNING_BOTS[bot_name.lower()] = {"end_time": end_time}
+    RUNNING_BOTS[bot_name] = {"end_time": end_time}
 
     screenshot_path = f"{bot_name}_screenshot.png"
     driver = setup_driver(url)
@@ -102,24 +102,25 @@ async def start_bot(bot_name, token, url, run_time):
 
 async def stop_bot(bot_name):
     print(f"❌ {bot_name} 봇이 중지되었습니다.")
-    RUNNING_BOTS.pop(bot_name.lower(), None)
+    RUNNING_BOTS.pop(bot_name, None)
 
 async def main():
-    bot_list = load_bot_list()
-
-    if not bot_list:
-        print("⚠️ 등록된 봇이 없습니다.")
-        if input("새 봇을 추가하시겠습니까? (Yes/No): ").strip().lower() == "yes":
-            register_new_bot()
-        else:
-            print("프로그램을 종료합니다.")
-            return
-
     while True:
+        bot_list = load_bot_list()
+
+        if not bot_list:
+            print("⚠️ 등록된 봇이 없습니다.")
+            if input("새 봇을 추가하시겠습니까? (Yes/No): ").strip().lower() == "yes":
+                register_new_bot()
+                continue
+            else:
+                print("프로그램을 종료합니다.")
+                return
+
         print("📋 등록된 봇 목록:")
         for idx, bot_name in enumerate(bot_list, start=1):
-            if bot_name.lower() in RUNNING_BOTS:
-                end_time = RUNNING_BOTS[bot_name.lower()]['end_time']
+            if bot_name in RUNNING_BOTS:
+                end_time = RUNNING_BOTS[bot_name]['end_time']
                 remaining_time = end_time - datetime.now()
                 remaining_str = f"{remaining_time.seconds // 3600:02}:{(remaining_time.seconds // 60) % 60:02}"
                 status_icon = "🟢"
