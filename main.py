@@ -19,13 +19,17 @@ RUNNING_BOTS = {}
 def load_bot_list():
     if os.path.exists(BOT_LIST_FILE):
         with open(BOT_LIST_FILE, "r") as file:
-            return json.load(file)
+            bot_list = json.load(file)
+            print(f"🔍 로드된 봇 목록: {bot_list}")  # 디버깅 메시지
+            return bot_list
+    print("📂 bot_list.json 파일이 없습니다.")
     return {}
 
 # 봇 목록 저장하기
 def save_bot_list(bot_list):
     with open(BOT_LIST_FILE, "w") as file:
         json.dump(bot_list, file, indent=4)
+    print(f"💾 저장된 봇 목록: {bot_list}")  # 디버깅 메시지
 
 # 봇 등록 함수
 def register_new_bot():
@@ -98,7 +102,7 @@ async def start_bot(bot_name, token, url, run_time):
 
 async def stop_bot(bot_name):
     print(f"❌ {bot_name} 봇이 중지되었습니다.")
-    RUNNING_BOTS.pop(bot_name, None)
+    RUNNING_BOTS.pop(bot_name.lower(), None)
 
 async def main():
     bot_list = load_bot_list()
@@ -114,8 +118,8 @@ async def main():
     while True:
         print("📋 등록된 봇 목록:")
         for idx, bot_name in enumerate(bot_list, start=1):
-            if bot_name in RUNNING_BOTS:
-                end_time = RUNNING_BOTS[bot_name]['end_time']
+            if bot_name.lower() in RUNNING_BOTS:
+                end_time = RUNNING_BOTS[bot_name.lower()]['end_time']
                 remaining_time = end_time - datetime.now()
                 remaining_str = f"{remaining_time.seconds // 3600:02}:{(remaining_time.seconds // 60) % 60:02}"
                 status_icon = "🟢"
@@ -123,12 +127,12 @@ async def main():
             else:
                 print(f"{idx}. {bot_name} 🔴")
 
-        bot_choice = input("봇을 켜거나 끌 이름을 입력하세요 (종료: exit): ").strip()
-        if bot_choice.lower() == "exit":
+        bot_choice = input("봇을 켜거나 끌 이름을 입력하세요 (종료: exit): ").strip().lower()
+        if bot_choice == "exit":
             print("프로그램을 종료합니다.")
             break
 
-        if any(bot_choice.lower() == name.lower() for name in bot_list.keys()):
+        if bot_choice in bot_list:
             if bot_choice in RUNNING_BOTS:
                 await stop_bot(bot_choice)
             else:
