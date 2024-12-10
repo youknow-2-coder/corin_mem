@@ -30,7 +30,7 @@ def save_bot_list(bot_list):
 # 봇 등록 함수
 def register_new_bot():
     TOKEN = input("Telegram Bot Token을 입력하세요: ").strip()
-    url = input("웹사이트 URL을 입력하세요: ").strip()
+    url = input("크롬 구성요소 URL을 입력하세요: ").strip()
     bot_name = input("봇의 이름을 입력하세요: ").strip()
     bot_list = load_bot_list()
     bot_list[bot_name] = {"token": TOKEN, "url": url}
