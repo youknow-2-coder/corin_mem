@@ -116,7 +116,7 @@ async def stop_bot(bot_name):
     RUNNING_BOTS.pop(bot_name, None)
 
 async def main():
-    subprocess.Popen(["nohup", "python3", "main.py"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.Popen(["nohup", "python3", "main.py"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True)
     while True:
         bot_list = load_bot_list()
 
@@ -152,7 +152,7 @@ async def main():
                 run_time = input(f"{bot_choice} 봇을 몇 시간 몇 분 동안 실행하시겠습니까? (형식: hh:mm): ").strip()
                 token = bot_list[bot_choice]['token']
                 url = bot_list[bot_choice]['url']
-                await start_bot(bot_choice, token, url, run_time)
+                asyncio.create_task(start_bot(bot_choice, token, url, run_time))
         else:
             print("❌ 등록된 봇이 아닙니다.")
 
