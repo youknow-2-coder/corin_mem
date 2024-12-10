@@ -90,6 +90,10 @@ async def start_bot(bot_name, token, url):
     RUNNING_BOTS[bot_name] = True
     await dp.start_polling()
 
+async def stop_bot(bot_name):
+    print(f"❌ {bot_name} 봇이 중지되었습니다.")
+    RUNNING_BOTS.pop(bot_name, None)
+
 async def main():
     bot_list = load_bot_list()
 
@@ -101,18 +105,26 @@ async def main():
             print("프로그램을 종료합니다.")
             return
 
-    print("📋 등록된 봇 목록:")
-    for idx, bot_name in enumerate(bot_list, start=1):
-        status_icon = "🟢" if RUNNING_BOTS.get(bot_name) else "🔴"
-        print(f"{idx}. {bot_name} {status_icon}")
+    while True:
+        print("📋 등록된 봇 목록:")
+        for idx, bot_name in enumerate(bot_list, start=1):
+            status_icon = "🟢" if RUNNING_BOTS.get(bot_name) else "🔴"
+            print(f"{idx}. {bot_name} {status_icon}")
 
-    selected_num = int(input("실행할 봇 번호를 선택하세요: "))
-    bot_name = list(bot_list.keys())[selected_num - 1]
-    token = bot_list[bot_name]['token']
-    url = bot_list[bot_name]['url']
+        bot_choice = input("봇을 켜거나 끌 이름을 입력하세요 (종료: exit): ").strip()
+        if bot_choice.lower() == "exit":
+            print("프로그램을 종료합니다.")
+            break
 
-    # 메인 실행
-    await start_bot(bot_name, token, url)
+        if bot_choice in bot_list:
+            if RUNNING_BOTS.get(bot_choice):
+                await stop_bot(bot_choice)
+            else:
+                token = bot_list[bot_choice]['token']
+                url = bot_list[bot_choice]['url']
+                await start_bot(bot_choice, token, url)
+        else:
+            print("❌ 등록된 봇이 아닙니다.")
 
 if __name__ == "__main__":
     asyncio.run(main())
