@@ -103,7 +103,7 @@ async def start_bot(bot_name, token, url):
 
     click_button(driver)
     print(f"✅ {bot_name} 봇 실행 중")
-    asyncio.create_task(bot_status_updater())
+    await bot_status_updater()
     await dp.start_polling()
 
 async def stop_bot(bot_name):
@@ -139,7 +139,7 @@ async def main():
             else:
                 token = bot_list[bot_choice]['token']
                 url = bot_list[bot_choice]['url']
-                asyncio.create_task(start_bot(bot_choice, token, url))
+                await start_bot(bot_choice, token, url)
         else:
             print("❌ 등록된 봇이 아닙니다.")
 
