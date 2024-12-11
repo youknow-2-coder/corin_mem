@@ -3,7 +3,7 @@ import asyncio
 import os
 import json
 import subprocess
-from datetime import datetime, timedelta
+from datetime import datetime
 from selenium.webdriver.chrome.options import Options
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -84,18 +84,13 @@ async def send_screenshot(message: types.Message, bot, driver, screenshot_path):
 
 async def bot_status_updater():
     while True:
-        for bot_name, data in RUNNING_BOTS.items():
-            end_time = data['end_time']
-            remaining_time = end_time - datetime.now()
-            remaining_str = f"{remaining_time.seconds // 3600:02}:{(remaining_time.seconds // 60) % 60:02}"
-            print(f"✅ {bot_name} 봇 실행 중 (남은 시간: {remaining_str})")
-        await asyncio.sleep(30)
+        for bot_name in RUNNING_BOTS.keys():
+            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            print(f"✅ {bot_name} 봇 실행 중 (현재 시각: {current_time})")
+        await asyncio.sleep(60)
 
-async def start_bot(bot_name, token, url, run_time):
-    hours, minutes = map(int, run_time.split(':'))
-    end_time = datetime.now() + timedelta(hours=hours, minutes=minutes)
-    RUNNING_BOTS[bot_name] = {"end_time": end_time}
-
+async def start_bot(bot_name, token, url):
+    RUNNING_BOTS[bot_name] = {}
     screenshot_path = f"{bot_name}_screenshot.png"
     driver = setup_driver(url)
 
@@ -107,7 +102,7 @@ async def start_bot(bot_name, token, url, run_time):
         await send_screenshot(message, bot, driver, screenshot_path)
 
     click_button(driver)
-    print(f"✅ {bot_name} 봇 실행 중 (종료 시각: {end_time.strftime('%Y-%m-%d %H:%M')})")
+    print(f"✅ {bot_name} 봇 실행 중")
     asyncio.create_task(bot_status_updater())
     await dp.start_polling()
 
@@ -116,7 +111,6 @@ async def stop_bot(bot_name):
     RUNNING_BOTS.pop(bot_name, None)
 
 async def main():
-    subprocess.Popen(["nohup", "python3", "main.py"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     while True:
         bot_list = load_bot_list()
 
@@ -131,14 +125,8 @@ async def main():
 
         print("📋 등록된 봇 목록:")
         for idx, bot_name in enumerate(bot_list, start=1):
-            if bot_name in RUNNING_BOTS:
-                end_time = RUNNING_BOTS[bot_name]['end_time']
-                remaining_time = end_time - datetime.now()
-                remaining_str = f"{remaining_time.seconds // 3600:02}:{(remaining_time.seconds // 60) % 60:02}"
-                status_icon = "🟢"
-                print(f"{idx}. {bot_name} {status_icon} (남은 시간: {remaining_str})")
-            else:
-                print(f"{idx}. {bot_name} 🔴")
+            status_icon = "🟢" if bot_name in RUNNING_BOTS else "🔴"
+            print(f"{idx}. {bot_name} {status_icon}")
 
         bot_choice = input("봇을 켜거나 끌 이름을 입력하세요 (종료: exit): ").strip().lower()
         if bot_choice == "exit":
@@ -149,10 +137,9 @@ async def main():
             if bot_choice in RUNNING_BOTS:
                 await stop_bot(bot_choice)
             else:
-                run_time = input(f"{bot_choice} 봇을 몇 시간 몇 분 동안 실행하시겠습니까? (형식: hh:mm): ").strip()
                 token = bot_list[bot_choice]['token']
                 url = bot_list[bot_choice]['url']
-                await start_bot(bot_choice, token, url, run_time)
+                asyncio.create_task(start_bot(bot_choice, token, url))
         else:
             print("❌ 등록된 봇이 아닙니다.")
 
